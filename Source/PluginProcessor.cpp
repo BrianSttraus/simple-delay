@@ -42,14 +42,11 @@ DdlmoduleAudioProcessor::DdlmoduleAudioProcessor()
                        })
 #endif
 {
+    //get slider parameter values
     delaySliderValue = parameters.getRawParameterValue("delay");
     feedbackSliderValue = parameters.getRawParameterValue("feedback");
     wetSliderValue = parameters.getRawParameterValue("wet");
     mDelaySize = 0;
-//    mFeedback = 0;
-//    mWetLevel = 0;
-//    mDelayInSamples = 0;
-//    mDelayBufferSize = 0;
     mReadindex = 0;
     mWriteIndex = 0;
    
@@ -132,33 +129,21 @@ void DdlmoduleAudioProcessor::changeProgramName (int index, const String& newNam
 
 void DdlmoduleAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
+    //intialize delay line size. 2 sec max
     mDelaySize = int(2*sampleRate);
     delayLine.setSize(mDelaySize);
-    
+    //clear delay line before audio stream
     delayLine.resetDelay();
+    //set delay line variables before audio stream
     delayLine.mDelayInSamples = *delaySliderValue;
     delayLine.mFeedback = *feedbackSliderValue;
     delayLine.mWetLevel = *wetSliderValue;
     delayLine.calculateVariables(sampleRate);
     
+    //set read index and wrap around circular buffer
     mReadindex = mWriteIndex - (int)delayLine.mDelayInSamples;
     if(mReadindex<0)
         mReadindex += mDelaySize;
-//    mDelayBufferSize = int(2*sampleRate);
-//    mDelayBuffer.setSize(getTotalNumInputChannels(), mDelayBufferSize);
-//
-//    mDelayBuffer.clear();
-//    mWriteIndex = 0;
-//    mReadindex = 0;
-//
-//    mFeedback =  *feedbackSliderValue/100.0f;
-//    mWetLevel = *wetSliderValue/100.0f;
-//    mDelayInSamples = *delaySliderValue * ((float)sampleRate/1000.0f);
-//
-//    mReadindex = mWriteIndex - (int) mDelayInSamples;
-//    if(mReadindex<0)
-//        mReadindex+=mDelayBufferSize;
-    
     
 }
 
@@ -201,15 +186,7 @@ void DdlmoduleAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuff
     
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
-
-//    mFeedback =  *feedbackSliderValue/100.0f;
-//    mWetLevel = *wetSliderValue/100.0f;
-//    mDelayInSamples = *delaySliderValue * ((float)getSampleRate()/1000.0f);
-    
-//    mReadindex = mWriteIndex - (int) mDelayInSamples;
-//    if(mReadindex<0)
-//        mReadindex+=mDelayBufferSize;
-    
+    //calculate variables and position of read head for each new audio buffer
     delayLine.mDelayInSamples = *delaySliderValue;
     delayLine.mFeedback = *feedbackSliderValue;
     delayLine.mWetLevel = *wetSliderValue;
@@ -229,7 +206,7 @@ void DdlmoduleAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuff
         float xn = bufferIn[sample];
 
         float yn = delayLine.getSample(mReadindex);
-
+        //if delay < 1 sample, interpolate between x and x-1
         if(mReadindex == mWriteIndex && delayLine.mDelayInSamples < 1.0)
             yn = xn;
         
@@ -239,6 +216,7 @@ void DdlmoduleAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuff
             
         float yn_1 = delayLine.getSample(mReadIndex_1);
         
+        //linear interpolation
         float fracDelay = delayLine.mDelayInSamples - (int)delayLine.mDelayInSamples;
         float interp = yn*fracDelay + yn_1*(1.0-fracDelay);
         
@@ -255,7 +233,8 @@ void DdlmoduleAudioProcessor::processBlock (AudioBuffer<float>& buffer, MidiBuff
         float out =delayLine.mWetLevel*yn + (1.0-delayLine.mWetLevel)*xn;
         bufferOut[0][sample] = out;
         bufferOut[1][sample] = out;
-
+        
+        //wrap read and write head around delay buffer
         mWriteIndex++;
         if(mWriteIndex >= mDelaySize)
             mWriteIndex = 0;

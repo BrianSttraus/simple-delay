@@ -43,6 +43,7 @@ void Ddl::resetDelay()
 
 void Ddl::calculateVariables(float sampleRate)
 {
+    
     mFeedback /= 100.0;
     mWetLevel /= 100.0;
     mDelayInSamples *= (sampleRate/1000.0);
