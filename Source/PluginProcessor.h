@@ -72,7 +72,6 @@ private:
 //    int mDelayBufferSize;
     
     Ddl delayLine;
-    int mDelaySize;
     int mReadindex, mWriteIndex;
     std::atomic<float>* delaySliderValue;
     std::atomic<float>* feedbackSliderValue;

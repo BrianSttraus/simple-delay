@@ -16,24 +16,30 @@ public:
     Ddl();
     ~Ddl();
     
-    void calculateVariables(float sampleRate);
-    void setSize(int size);
+    void calculateVariables(float feedback, float wet, float delaytime, float sampleRate);
+    void setSize(int srate);
     void resetDelay();
     
-    float getSample(int index){return mDelayBuffer[index];};
+    int getDelayBufferSize(){return mDelayBufferSize;};
+    
+    //float& operator[](int index) const {return mDelayBuffer[index];};
+    void delayLineProcessor(float* sample, float delayTime);
     void setSample(float samp, int index){ mDelayBuffer[index] = samp;};
     
-    float getCurrentFeedbackOutput();
     void setCurrentFeedbackInput(float f){mFeedbackIn = f;}
     void setUsesExternalFeedback(bool b){mUseExternalFeedback = b;}
-    bool mUseExternalFeedback{false};
     
+    bool mUseExternalFeedback{false};
     float mFeedbackIn;
-    float mDelayInSamples, mFeedback, mWetLevel;
+    
+    
     
 private:
-    
+    float mDelayInSamples, mFeedback, mWetLevel;
+    int mReadindex, mWriteIndex;
     float* mDelayBuffer;
     int mDelayBufferSize;
+    float mDelayTimeSmoothed;
+    float sRate;
     
 };
